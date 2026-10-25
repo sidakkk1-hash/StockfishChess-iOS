@@ -270,6 +270,8 @@ function makePlayerMove(from, to, promotion = 'q') {
         });
 
         currentPly = moveHistory.length;
+        if (bestMoveArrow) bestMoveArrow.style.display = 'none';
+        if (metricBestMove) metricBestMove.textContent = '...';
         renderBoard();
         updateStatus();
         renderMovesTable();
@@ -458,6 +460,14 @@ function updateEngineMetrics(evalData) {
 }
 
 function drawBestMoveArrow(from, to) {
+    // Verify move is strictly legal for the player whose turn it currently is
+    const legals = game.moves({ verbose: true });
+    const isLegalNow = legals.some(m => m.from === from && m.to === to);
+    if (!isLegalNow) {
+        bestMoveArrow.style.display = 'none';
+        return;
+    }
+
     const f1 = from[0], r1 = from[1];
     const f2 = to[0], r2 = to[1];
 

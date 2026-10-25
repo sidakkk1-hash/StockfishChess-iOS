@@ -8,7 +8,6 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 
 // Initialize Stockfish ASM engine
 let engine = null;
-let currentResolve = null;
 let currentEval = {
     depth: 0,
     scoreCp: 0,
@@ -16,6 +15,12 @@ let currentEval = {
     bestMove: null,
     pv: []
 };
+
+let isSearching = false;
+let currentResolve = null;
+let stopResolve = null;
+let currentSearchId = 0;
+let activeSearchId = 0;
 
 function getEngine() {
     if (engine) return engine;
@@ -27,14 +32,19 @@ function getEngine() {
             const line = rawLine.trim();
             if (!line) continue;
             
-            if (line.startsWith('info')) {
+            if (line === 'readyok' && stopResolve) {
+                const cb = stopResolve;
+                stopResolve = null;
+                cb();
+            } else if (line.startsWith('info') && activeSearchId === currentSearchId) {
                 parseInfoLine(line);
             } else if (line.startsWith('bestmove')) {
+                isSearching = false;
                 const parts = line.split(/\s+/);
                 if (parts.length >= 2) {
                     currentEval.bestMove = parts[1];
                 }
-                if (currentResolve) {
+                if (currentResolve && activeSearchId === currentSearchId) {
                     const res = currentResolve;
                     currentResolve = null;
                     res({ ...currentEval });
@@ -78,12 +88,27 @@ function parseInfoLine(line) {
 function evaluatePosition(fen, depth = 12) {
     return new Promise((resolve) => {
         const eng = getEngine();
-        currentEval = { depth: 0, scoreCp: 0, mateIn: null, bestMove: null, pv: [] };
-        currentResolve = resolve;
+        currentSearchId++;
+        const thisSearchId = currentSearchId;
         
-        eng.processCommand('stop');
-        eng.processCommand(`position fen ${fen}`);
-        eng.processCommand(`go depth ${depth}`);
+        const launchSearch = () => {
+            currentEval = { depth: 0, scoreCp: 0, mateIn: null, bestMove: null, pv: [] };
+            activeSearchId = thisSearchId;
+            currentResolve = resolve;
+            isSearching = true;
+            eng.processCommand(`position fen ${fen}`);
+            eng.processCommand(`go depth ${depth}`);
+        };
+
+        if (isSearching) {
+            stopResolve = () => {
+                launchSearch();
+            };
+            eng.processCommand('stop');
+            eng.processCommand('isready');
+        } else {
+            launchSearch();
+        }
         
         // Safety timeout
         setTimeout(() => {

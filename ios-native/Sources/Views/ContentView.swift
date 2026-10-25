@@ -59,7 +59,7 @@ public struct ContentView: View {
                             selectedSquare: selectedSquare,
                             legalMoves: legalMoveDestinations,
                             lastMove: currentLastMove,
-                            bestMove: autoAnalyze ? engine.currentEvaluation.bestMove : nil,
+                            bestMove: verifiedBestMove,
                             isCheck: isCheck,
                             onSquareTapped: handleSquareTap
                         )
@@ -176,6 +176,9 @@ public struct ContentView: View {
                         }
                     ]
                 )
+            }
+            .onAppear {
+                runAnalysisForCurrentPosition()
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
@@ -450,6 +453,7 @@ public struct ContentView: View {
         )
         moves.append(record)
         currentPly = moves.count
+        engine.currentEvaluation.bestMove = nil // Clear stale arrow immediately
         
         if autoAnalyze {
             runAnalysisForCurrentPosition()
@@ -570,6 +574,17 @@ public struct ContentView: View {
         let from = String(uci.prefix(2))
         let to = String(uci.dropFirst(2).prefix(2))
         return (from, to)
+    }
+    
+    private var verifiedBestMove: String? {
+        guard autoAnalyze, let bm = engine.currentEvaluation.bestMove, bm.count >= 4 else { return nil }
+        let fromStr = String(bm.prefix(2))
+        let toStr = String(bm.dropFirst(2).prefix(2))
+        let legals = chessEngine.legalMoves()
+        if legals.contains(where: { $0.from.description == fromStr && $0.to.description == toStr }) {
+            return bm
+        }
+        return nil
     }
     
     private func pieceSymbol(_ piece: ChessPiece) -> String {
