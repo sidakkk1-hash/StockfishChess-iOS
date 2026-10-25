@@ -448,7 +448,7 @@ public:
     _searcher.stopRequested = false;
 
     _engineThread = std::thread([self]() {
-        this->engineLoop();
+        [self engineLoop];
     });
 
     return YES;
@@ -498,8 +498,8 @@ public:
         std::string cmd;
         {
             std::unique_lock<std::mutex> lock(_commandMutex);
-            _commandCondition.wait(lock, [this]() {
-                return !_commandQueue.empty() || _shouldTerminate.load();
+            _commandCondition.wait(lock, [self]() {
+                return !self->_commandQueue.empty() || self->_shouldTerminate.load();
             });
 
             if (_shouldTerminate.load()) break;
