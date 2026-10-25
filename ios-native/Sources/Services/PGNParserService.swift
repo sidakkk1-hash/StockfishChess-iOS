@@ -42,8 +42,9 @@ public final class PGNParserService {
         
         // Tokenize and extract moves (strip "1.", "1...", "1-0", "0-1", "1/2-1/2", "*")
         let tokens = cleanText.components(separatedBy: .whitespacesAndNewlines)
+        let punctToTrim = CharacterSet.punctuationCharacters.subtracting(CharacterSet(charactersIn: "+#!?"))
         for token in tokens {
-            let t = token.trimmingCharacters(in: .punctuationCharacters.subtracting(Set("+#!?")))
+            let t = token.trimmingCharacters(in: punctToTrim)
             if t.isEmpty { continue }
             if t.contains(".") || t == "1-0" || t == "0-1" || t == "1/2-1/2" || t == "*" {
                 continue

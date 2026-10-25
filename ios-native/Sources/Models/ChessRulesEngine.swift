@@ -231,7 +231,7 @@ public final class ChessRulesEngine {
         let side = color ?? activeColor
         let pseudo = generatePseudoLegalMoves(for: side)
         return pseudo.filter { move in
-            var clone = self.cloneState()
+            let clone = self.cloneState()
             clone.applyMoveUnchecked(move)
             return !clone.isKingInCheck(side)
         }

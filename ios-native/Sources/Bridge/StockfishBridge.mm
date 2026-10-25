@@ -438,7 +438,7 @@ public:
     return _isRunning.load();
 }
 
-- (BOOL)startEngineWithError:(NSError * _Nullable * _Nullable)error {
+- (BOOL)startEngine {
     if (_isRunning.load()) {
         return YES;
     }

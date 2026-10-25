@@ -22,7 +22,6 @@ public struct EvalBarView: View {
             let totalHeight = geo.size.height
             let whiteFrac = isFlipped ? (100.0 - whiteWinPercentage) / 100.0 : whiteWinPercentage / 100.0
             let whiteHeight = max(0, min(totalHeight, totalHeight * CGFloat(whiteFrac)))
-            let blackHeight = totalHeight - whiteHeight
             
             ZStack(alignment: isFlipped ? .top : .bottom) {
                 // Black side background

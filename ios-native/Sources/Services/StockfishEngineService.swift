@@ -56,9 +56,8 @@ public final class StockfishEngineService: ObservableObject {
             self.engineError = .executionFailed(errorMsg)
         }
         
-        var error: NSError?
-        let success = StockfishBridge.sharedInstance().startEngineWithError(&error)
-        if !success || error != nil {
+        let success = StockfishBridge.sharedInstance().startEngine()
+        if !success {
             self.engineError = .missingEngineBinary
             return
         }

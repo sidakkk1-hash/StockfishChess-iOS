@@ -17,8 +17,8 @@ typedef void (^StockfishErrorBlock)(NSString *errorMessage);
 + (instancetype)sharedInstance;
 
 /// Initializes and starts the background Stockfish thread.
-/// Returns YES if engine started successfully, NO if an error occurred (e.g. missing binary/weights).
-- (BOOL)startEngineWithError:(NSError * _Nullable * _Nullable)error;
+/// Returns YES if engine started successfully, NO if an error occurred.
+- (BOOL)startEngine;
 
 /// Sends a raw UCI command (e.g., "uci", "isready", "position fen ...", "go depth 15")
 - (void)sendCommand:(NSString *)command;
