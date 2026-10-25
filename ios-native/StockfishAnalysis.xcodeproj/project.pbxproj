@@ -1,0 +1,359 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1A000001 /* StockfishAnalysisApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000001 /* StockfishAnalysisApp.swift */; };
+		1A000002 /* ChessTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000002 /* ChessTypes.swift */; };
+		1A000003 /* ChessRulesEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000003 /* ChessRulesEngine.swift */; };
+		1A000004 /* StockfishEngineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000004 /* StockfishEngineService.swift */; };
+		1A000005 /* GameReviewService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000005 /* GameReviewService.swift */; };
+		1A000006 /* PGNParserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000006 /* PGNParserService.swift */; };
+		1A000007 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000007 /* ContentView.swift */; };
+		1A000008 /* ChessBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000008 /* ChessBoardView.swift */; };
+		1A000009 /* EvalBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A000009 /* EvalBarView.swift */; };
+		1A00000A /* AnalysisGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A00000A /* AnalysisGraphView.swift */; };
+		1A00000B /* MoveListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A00000B /* MoveListView.swift */; };
+		1A00000C /* PGNImportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A00000C /* PGNImportSheet.swift */; };
+		1A00000D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A00000D /* SettingsView.swift */; };
+		1A00000E /* StockfishBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2A00000E /* StockfishBridge.mm */; };
+		1A00000F /* nn-61e7af4bb97d.nnue in Resources */ = {isa = PBXBuildFile; fileRef = 2A00000F /* nn-61e7af4bb97d.nnue */; };
+		1A000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2A000010 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0A000001 /* StockfishAnalysis.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StockfishAnalysis.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2A000001 /* StockfishAnalysisApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockfishAnalysisApp.swift; sourceTree = "<group>"; };
+		2A000002 /* ChessTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChessTypes.swift; sourceTree = "<group>"; };
+		2A000003 /* ChessRulesEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChessRulesEngine.swift; sourceTree = "<group>"; };
+		2A000004 /* StockfishEngineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockfishEngineService.swift; sourceTree = "<group>"; };
+		2A000005 /* GameReviewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameReviewService.swift; sourceTree = "<group>"; };
+		2A000006 /* PGNParserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PGNParserService.swift; sourceTree = "<group>"; };
+		2A000007 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		2A000008 /* ChessBoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChessBoardView.swift; sourceTree = "<group>"; };
+		2A000009 /* EvalBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EvalBarView.swift; sourceTree = "<group>"; };
+		2A00000A /* AnalysisGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisGraphView.swift; sourceTree = "<group>"; };
+		2A00000B /* MoveListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveListView.swift; sourceTree = "<group>"; };
+		2A00000C /* PGNImportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PGNImportSheet.swift; sourceTree = "<group>"; };
+		2A00000D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		2A00000E /* StockfishBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = StockfishBridge.mm; sourceTree = "<group>"; };
+		2A00000F /* nn-61e7af4bb97d.nnue */ = {isa = PBXFileReference; lastKnownFileType = file; path = "nn-61e7af4bb97d.nnue"; sourceTree = "<group>"; };
+		2A000010 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		2A000011 /* StockfishBridge.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StockfishBridge.hpp; sourceTree = "<group>"; };
+		2A000012 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3A000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		4A000001 = {
+			isa = PBXGroup;
+			children = (
+				4A000002 /* Sources */,
+				4A000003 /* App */,
+				4A000004 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4A000002 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				2A000001 /* StockfishAnalysisApp.swift */,
+				4A000005 /* Bridge */,
+				4A000006 /* Models */,
+				4A000007 /* Services */,
+				4A000008 /* Views */,
+				4A000009 /* Resources */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		4A000003 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				2A000012 /* Info.plist */,
+				2A000010 /* Assets.xcassets */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		4A000004 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0A000001 /* StockfishAnalysis.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4A000005 /* Bridge */ = {
+			isa = PBXGroup;
+			children = (
+				2A000011 /* StockfishBridge.hpp */,
+				2A00000E /* StockfishBridge.mm */,
+			);
+			path = Bridge;
+			sourceTree = "<group>";
+		};
+		4A000006 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				2A000002 /* ChessTypes.swift */,
+				2A000003 /* ChessRulesEngine.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		4A000007 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				2A000004 /* StockfishEngineService.swift */,
+				2A000005 /* GameReviewService.swift */,
+				2A000006 /* PGNParserService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		4A000008 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				2A000007 /* ContentView.swift */,
+				2A000008 /* ChessBoardView.swift */,
+				2A000009 /* EvalBarView.swift */,
+				2A00000A /* AnalysisGraphView.swift */,
+				2A00000B /* MoveListView.swift */,
+				2A00000C /* PGNImportSheet.swift */,
+				2A00000D /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		4A000009 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				2A00000F /* nn-61e7af4bb97d.nnue */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		5A000001 /* StockfishAnalysis */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6A000001 /* Build configuration list for PBXNativeTarget "StockfishAnalysis" */;
+			buildPhases = (
+				7A000001 /* Sources */,
+				3A000001 /* Frameworks */,
+				8A000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = StockfishAnalysis;
+			productName = StockfishAnalysis;
+			productReference = 0A000001 /* StockfishAnalysis.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9A000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1520;
+				TargetAttributes = {
+					5A000001 = {
+						CreatedOnToolsVersion = 15.2;
+					};
+				};
+			};
+			buildConfigurationList = 6A000002 /* Build configuration list for PBXProject "StockfishAnalysis" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 4A000001;
+			productRefGroup = 4A000004 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5A000001 /* StockfishAnalysis */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8A000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A00000F /* nn-61e7af4bb97d.nnue in Resources */,
+				1A000010 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7A000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A000001 /* StockfishAnalysisApp.swift in Sources */,
+				1A000002 /* ChessTypes.swift in Sources */,
+				1A000003 /* ChessRulesEngine.swift in Sources */,
+				1A000004 /* StockfishEngineService.swift in Sources */,
+				1A000005 /* GameReviewService.swift in Sources */,
+				1A000006 /* PGNParserService.swift in Sources */,
+				1A000007 /* ContentView.swift in Sources */,
+				1A000008 /* ChessBoardView.swift in Sources */,
+				1A000009 /* EvalBarView.swift in Sources */,
+				1A00000A /* AnalysisGraphView.swift in Sources */,
+				1A00000B /* MoveListView.swift in Sources */,
+				1A00000C /* PGNImportSheet.swift in Sources */,
+				1A00000D /* SettingsView.swift in Sources */,
+				1A00000E /* StockfishBridge.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		BA000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_BITCODE = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chessanalysis.stockfish;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/Bridge/StockfishBridge.hpp";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BA000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_BITCODE = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chessanalysis.stockfish;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/Bridge/StockfishBridge.hpp";
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		BA000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		BA000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6A000001 /* Build configuration list for PBXNativeTarget "StockfishAnalysis" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BA000001 /* Debug */,
+				BA000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6A000002 /* Build configuration list for PBXProject "StockfishAnalysis" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BA000003 /* Debug */,
+				BA000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9A000001 /* Project object */;
+}

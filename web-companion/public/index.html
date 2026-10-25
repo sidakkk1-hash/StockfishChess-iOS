@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stockfish 19 Chess & Full Game Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top App Bar -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="engine-badge">
+                    <span class="status-dot ready" id="engineDot"></span>
+                    <span class="engine-title">Stockfish 19 <span class="offline-tag">Local NNUE</span></span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="btnFlipBoard" class="icon-btn" title="Flip Board (Switch Black/White)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/></svg>
+                </button>
+                <button id="btnUndo" class="icon-btn" title="Undo Move">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h10a5 5 0 0 1 5 5v2M3 10l6-6M3 10l6 6"/></svg>
+                </button>
+                <button id="btnReset" class="icon-btn" title="New Game">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8m0 0V3m0 5h5m-5 4a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16m0 0v5m0-5h-5"/></svg>
+                </button>
+                <button id="btnPGN" class="icon-btn" title="Import / Export PGN">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                </button>
+                <button id="btnSettings" class="icon-btn" title="Settings">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Accuracy & Review Bar (When analyzed) -->
+        <div class="review-stats-card" id="reviewStatsCard" style="display: none;">
+            <div class="accuracy-pill white-acc">
+                <span class="player-dot white-dot"></span>
+                <span class="acc-val" id="whiteAccVal">92.4%</span>
+                <span class="blunder-tag" id="whiteBlundersCount">0 blunders</span>
+            </div>
+            <div class="review-title-badge">GAME REVIEW</div>
+            <div class="accuracy-pill black-acc">
+                <span class="player-dot black-dot"></span>
+                <span class="acc-val" id="blackAccVal">84.1%</span>
+                <span class="blunder-tag" id="blackBlundersCount">1 blunder</span>
+            </div>
+        </div>
+
+        <!-- Main Layout: Board + Side Panel -->
+        <main class="main-content">
+            <!-- Left: Board Column with Eval Bar -->
+            <div class="board-column">
+                <!-- Top Player Info -->
+                <div class="player-bar top-player" id="topPlayerBar">
+                    <div class="player-identity">
+                        <span class="player-color-badge" id="topPlayerColorDot"></span>
+                        <span class="player-name" id="topPlayerName">Black</span>
+                        <span class="turn-indicator" id="topTurnIndicator">Turn</span>
+                    </div>
+                    <div class="captured-pieces" id="topCapturedPieces"></div>
+                </div>
+
+                <!-- Board + Eval Bar Wrapper -->
+                <div class="board-and-eval-wrapper">
+                    <!-- Vertical Dynamic Eval Bar -->
+                    <div class="eval-bar-container" id="evalBarContainer">
+                        <div class="eval-black-part" id="evalBlackPart"></div>
+                        <div class="eval-white-part" id="evalWhitePart"></div>
+                        <div class="eval-score-text" id="evalScoreText">+0.0</div>
+                    </div>
+
+                    <!-- 8x8 Chessboard Container -->
+                    <div class="chessboard-wrapper theme-green" id="chessboardWrapper">
+                        <div class="chessboard" id="chessboard"></div>
+                        <!-- SVG Layer for Best Move Arrow & Shapes -->
+                        <svg class="board-svg-overlay" id="boardSvgOverlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <defs>
+                                <marker id="arrowHead" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
+                                    <path d="M0,0 L6,3 L0,6 Z" fill="#1baca6" />
+                                </marker>
+                            </defs>
+                            <line id="bestMoveArrow" class="best-move-arrow" x1="0" y1="0" x2="0" y2="0" style="display: none;" marker-end="url(#arrowHead)" />
+                        </svg>
+
+                        <!-- Game Over Overlay -->
+                        <div class="game-over-modal" id="gameOverModal" style="display: none;">
+                            <div class="game-over-content">
+                                <h3 id="gameOverTitle">Checkmate!</h3>
+                                <p id="gameOverSubtitle">White won by checkmate</p>
+                                <div class="modal-buttons">
+                                    <button class="btn btn-primary" id="btnGameOverReview">Review Game</button>
+                                    <button class="btn btn-secondary" id="btnGameOverNew">New Game</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Promotion Modal -->
+                        <div class="promotion-modal" id="promotionModal" style="display: none;">
+                            <div class="promotion-dialog">
+                                <h4>Promote Pawn</h4>
+                                <div class="promo-options" id="promoOptions"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Player Info -->
+                <div class="player-bar bottom-player" id="bottomPlayerBar">
+                    <div class="player-identity">
+                        <span class="player-color-badge" id="bottomPlayerColorDot"></span>
+                        <span class="player-name" id="bottomPlayerName">White</span>
+                        <span class="turn-indicator active" id="bottomTurnIndicator">Turn</span>
+                    </div>
+                    <div class="captured-pieces" id="bottomCapturedPieces"></div>
+                </div>
+
+                <!-- Navigation Controls -->
+                <div class="nav-controls">
+                    <button id="btnStart" class="nav-btn" title="First Move">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                    </button>
+                    <button id="btnPrev" class="nav-btn" title="Previous Move">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <span class="ply-indicator" id="plyIndicator">Start</span>
+                    <button id="btnNext" class="nav-btn" title="Next Move">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                    <button id="btnEnd" class="nav-btn" title="Last Move">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Analysis, Graph & Move History -->
+            <div class="analysis-column">
+                <!-- Stockfish Real-time Evaluation Card -->
+                <div class="panel-card engine-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="icon">⚡</span>
+                            <span>Local Engine Analysis</span>
+                        </div>
+                        <div class="engine-controls">
+                            <label class="switch-toggle" title="Toggle Auto Analysis">
+                                <input type="checkbox" id="chkAutoAnalyze" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="eval-metrics">
+                            <div class="metric-box">
+                                <span class="metric-label">Best Move</span>
+                                <span class="metric-val best-move-val" id="metricBestMove">—</span>
+                            </div>
+                            <div class="metric-box">
+                                <span class="metric-label">Evaluation</span>
+                                <span class="metric-val eval-score-val" id="metricScore">+0.00</span>
+                            </div>
+                            <div class="metric-box">
+                                <span class="metric-label">Depth</span>
+                                <div class="depth-slider-wrapper">
+                                    <input type="range" id="depthSlider" min="8" max="20" value="12" step="1">
+                                    <span id="depthVal">12</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pv-line-box">
+                            <span class="pv-label">Principal Variation:</span>
+                            <span class="pv-moves" id="metricPV">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Full Game Review Trigger -->
+                <div class="review-action-banner">
+                    <button class="btn btn-review" id="btnRunReview">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <span>Run Full Game Review</span>
+                    </button>
+                    <div class="review-progress" id="reviewProgressContainer" style="display: none;">
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="reviewProgressBar" style="width: 0%;"></div>
+                        </div>
+                        <span class="progress-text" id="reviewProgressText">Analyzing moves... 0%</span>
+                    </div>
+                </div>
+
+                <!-- Interactive Evaluation Trajectory Graph -->
+                <div class="panel-card graph-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="icon">📈</span>
+                            <span>Evaluation Graph</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="graph-container" id="graphContainer">
+                            <svg class="eval-graph-svg" id="evalGraphSvg" viewBox="0 0 400 100" preserveAspectRatio="none">
+                                <line x1="0" y1="50" x2="400" y2="50" stroke="#444" stroke-dasharray="3,3" />
+                                <path id="graphPath" d="M0,50 L400,50" fill="none" stroke="url(#graphGrad)" stroke-width="2.5" />
+                                <defs>
+                                    <linearGradient id="graphGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#1baca6" />
+                                        <stop offset="100%" stop-color="#78a942" />
+                                    </linearGradient>
+                                </defs>
+                                <g id="graphDots"></g>
+                                <circle id="graphCursor" cx="0" cy="50" r="4.5" fill="#fff" stroke="#f7f769" stroke-width="2" style="display: none;" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Move History with Blunder Badges -->
+                <div class="panel-card moves-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="icon">📋</span>
+                            <span>Move History</span>
+                        </div>
+                        <span class="moves-count" id="movesCount">0 moves</span>
+                    </div>
+                    <div class="card-body moves-list-container">
+                        <div class="moves-table" id="movesTable"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- PGN / FEN Import & Export Sheet Modal -->
+    <div class="app-modal" id="pgnModal" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3>PGN & Position Tools</h3>
+                <button class="modal-close" id="btnClosePGN">&times;</button>
+            </div>
+            <div class="modal-tabs">
+                <button class="tab-btn active" data-tab="tabPGN">Import PGN</button>
+                <button class="tab-btn" data-tab="tabExport">Export Game</button>
+                <button class="tab-btn" data-tab="tabFEN">Load FEN</button>
+                <button class="tab-btn" data-tab="tabClassics">Classic Games</button>
+            </div>
+            <div class="modal-body">
+                <!-- Tab: Import PGN -->
+                <div class="tab-pane active" id="tabPGN">
+                    <p class="tab-desc">Paste standard PGN text (from Chess.com, Lichess, or tournament archive):</p>
+                    <textarea id="txtPGNInput" placeholder="1. e4 e5 2. Nf3 Nc6 3. Bc4 ..."></textarea>
+                    <button class="btn btn-primary" id="btnApplyPGN">Import & Load Game</button>
+                </div>
+                <!-- Tab: Export PGN -->
+                <div class="tab-pane" id="tabExport">
+                    <p class="tab-desc">Standard PGN of the current game:</p>
+                    <textarea id="txtPGNOutput" readonly></textarea>
+                    <button class="btn btn-secondary" id="btnCopyPGN">Copy PGN to Clipboard</button>
+                </div>
+                <!-- Tab: Load FEN -->
+                <div class="tab-pane" id="tabFEN">
+                    <p class="tab-desc">Paste Forsyth-Edwards Notation (FEN):</p>
+                    <input type="text" id="txtFENInput" placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1">
+                    <div class="fen-presets">
+                        <button class="btn-preset" data-fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1">Starting Board</button>
+                        <button class="btn-preset" data-fen="r1bqkb1r/pppp1ppp/2n5/4p2Q/2B1n3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 4">Scholar's Blunder</button>
+                        <button class="btn-preset" data-fen="8/4P3/8/8/8/8/8/4K2k w - - 0 1">Pawn Promotion</button>
+                    </div>
+                    <button class="btn btn-primary" id="btnApplyFEN">Load FEN Position</button>
+                </div>
+                <!-- Tab: Classics -->
+                <div class="tab-pane" id="tabClassics">
+                    <p class="tab-desc">Select a legendary chess masterpiece to analyze with Stockfish 19:</p>
+                    <div class="classics-list">
+                        <div class="classic-item" data-id="morphy">
+                            <strong>The Opera Game (1858)</strong>
+                            <span>Paul Morphy vs. Duke Karl / Count Isouard</span>
+                        </div>
+                        <div class="classic-item" data-id="kasparov">
+                            <strong>Kasparov's Immortal (1999)</strong>
+                            <span>Garry Kasparov vs. Veselin Topalov</span>
+                        </div>
+                        <div class="classic-item" data-id="fischer">
+                            <strong>Game of the Century (1956)</strong>
+                            <span>Donald Byrne vs. Bobby Fischer (Age 13)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="app-modal" id="settingsModal" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3>Settings</h3>
+                <button class="modal-close" id="btnCloseSettings">&times;</button>
+            </div>
+            <div class="modal-body settings-body">
+                <div class="setting-row">
+                    <label>Board Theme</label>
+                    <select id="selectTheme">
+                        <option value="theme-green">Classic Green</option>
+                        <option value="theme-wood">Warm Wood</option>
+                        <option value="theme-blue">Midnight Blue</option>
+                        <option value="theme-charcoal">Modern Charcoal</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label>Sound Effects</label>
+                    <input type="checkbox" id="chkSound" checked>
+                </div>
+                <div class="setting-row">
+                    <label>Show Suggested Arrow</label>
+                    <input type="checkbox" id="chkShowArrow" checked>
+                </div>
+                <div class="setting-row">
+                    <label>Highlight Legal Moves</label>
+                    <input type="checkbox" id="chkShowHints" checked>
+                </div>
+                <div class="setting-divider"></div>
+                <div class="licensing-info">
+                    <h4>Stockfish 19 Engine Details</h4>
+                    <p>Engine: Stockfish 19 Lite/Full (Local WebAssembly/ASM)</p>
+                    <p>Network: Embedded NNUE Neural Network</p>
+                    <p>Network calls: <strong>0 (Completely Offline)</strong></p>
+                    <p>License: GNU General Public License v3.0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts: chess.js module and main app logic -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>

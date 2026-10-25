@@ -1,0 +1,55 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build & Package iOS IPA
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -switch /Applications/Xcode_15.4.app
+
+      - name: Cache SPM Dependencies
+        uses: actions/cache@v3
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('ios-native/Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Build App Bundle for iOS Device (arm64)
+        run: |
+          cd ios-native
+          xcodebuild clean build \
+            -project StockfishAnalysis.xcodeproj \
+            -scheme StockfishAnalysis \
+            -configuration Release \
+            -sdk iphoneos \
+            -arch arm64 \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            BUILD_DIR="../build"
+
+      - name: Package into Sideloadable IPA
+        run: |
+          mkdir -p build/Payload
+          cp -r build/Release-iphoneos/StockfishAnalysis.app build/Payload/
+          cd build
+          zip -r StockfishChess.ipa Payload
+          echo "IPA generated at: $(pwd)/StockfishChess.ipa"
+
+      - name: Upload Installable IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: StockfishChess-iOS-IPA
+          path: build/StockfishChess.ipa
+          retention-days: 14
