@@ -92,9 +92,9 @@ public struct GameMoveRecord: Equatable {
 
 // MARK: - Complete FIDE Legal Chess Rules Engine
 
-public final class ChessRulesEngine {
-    public var board: [Square: ChessPiece] = [:]
-    public var activeColor: PieceColor = .white
+public final class ChessRulesEngine: ObservableObject {
+    @Published public var board: [Square: ChessPiece] = [:]
+    @Published public var activeColor: PieceColor = .white
     public var castlingRights: CastlingRights = CastlingRights()
     public var enPassantSquare: Square? = nil
     public var halfmoveClock: Int = 0
@@ -239,21 +239,46 @@ public final class ChessRulesEngine {
     
     public func legalMovesFrom(square: Square) -> [ChessMove] {
         guard let piece = board[square], piece.color == activeColor else { return [] }
-        return legalMoves().filter { $0.from == square }
+        var moves = legalMoves().filter { $0.from == square }
+        
+        // If piece is King, also include the respective Rook square as a legal destination for tap-to-castle
+        if piece.type == .king {
+            let rank = square.rank
+            if moves.contains(where: { $0.to == Square(file: 6, rank: rank) }) {
+                moves.append(ChessMove(from: square, to: Square(file: 7, rank: rank)))
+            }
+            if moves.contains(where: { $0.to == Square(file: 2, rank: rank) }) {
+                moves.append(ChessMove(from: square, to: Square(file: 0, rank: rank)))
+            }
+        }
+        return moves
     }
     
     public func makeMove(_ move: ChessMove) -> Bool {
+        var effectiveMove = move
+        // Support castling by tapping the rook directly:
+        if let movingPiece = board[move.from], movingPiece.type == .king {
+            let rank = move.from.rank
+            if move.to == Square(file: 7, rank: rank) {
+                // Tapped kingside rook -> translate to King moving to g-file (file 6)
+                effectiveMove = ChessMove(from: move.from, to: Square(file: 6, rank: rank))
+            } else if move.to == Square(file: 0, rank: rank) {
+                // Tapped queenside rook -> translate to King moving to c-file (file 2)
+                effectiveMove = ChessMove(from: move.from, to: Square(file: 2, rank: rank))
+            }
+        }
+        
         let legals = legalMoves()
-        guard legals.contains(move) else {
+        guard legals.contains(effectiveMove) else {
             // Check promotion without explicit promo piece specified
-            if move.promotion == nil {
-                if let promoMove = legals.first(where: { $0.from == move.from && $0.to == move.to && $0.promotion == .queen }) {
+            if effectiveMove.promotion == nil {
+                if let promoMove = legals.first(where: { $0.from == effectiveMove.from && $0.to == effectiveMove.to && $0.promotion == .queen }) {
                     return executeVerifiedMove(promoMove)
                 }
             }
             return false
         }
-        return executeVerifiedMove(move)
+        return executeVerifiedMove(effectiveMove)
     }
     
     public func makeMove(from: String, to: String, promotion: PieceType? = nil) -> Bool {

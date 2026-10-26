@@ -78,8 +78,12 @@ public final class StockfishEngineService: ObservableObject {
     public func evaluate(fen: String, depth: Int? = nil) async throws -> EngineEvaluation {
         stop()
         
+        if let cont = analysisContinuation {
+            analysisContinuation = nil
+            cont.resume(returning: currentEvaluation)
+        }
+        
         let searchDepth = depth ?? targetDepth
-        currentEvaluation = EngineEvaluation()
         currentEvaluation.isCalculating = true
         currentEvaluation.statusMessage = "Analyzing depth \(searchDepth)..."
         
@@ -88,6 +92,19 @@ public final class StockfishEngineService: ObservableObject {
             self.sendCommand("position fen \(fen)")
             self.sendCommand("go depth \(searchDepth)")
         }
+    }
+    
+    public func startAnalysis(fen: String, depth: Int? = nil) {
+        stop()
+        if let cont = analysisContinuation {
+            analysisContinuation = nil
+            cont.resume(returning: currentEvaluation)
+        }
+        let searchDepth = depth ?? targetDepth
+        currentEvaluation.isCalculating = true
+        currentEvaluation.statusMessage = "Analyzing depth \(searchDepth)..."
+        sendCommand("position fen \(fen)")
+        sendCommand("go depth \(searchDepth)")
     }
     
     private func handleEngineOutput(_ rawLine: String) {
@@ -137,7 +154,12 @@ public final class StockfishEngineService: ObservableObject {
                 currentEvaluation.nps = nps
                 i += 2
             } else if key == "pv", i + 1 < parts.count {
-                currentEvaluation.pv = Array(parts[(i+1)...])
+                let pvArray = Array(parts[(i+1)...])
+                currentEvaluation.pv = pvArray
+                if let first = pvArray.first, first.count >= 4 {
+                    // Update bestMove immediately during iterative deepening
+                    currentEvaluation.bestMove = first
+                }
                 break
             } else {
                 i += 1
@@ -149,6 +171,9 @@ public final class StockfishEngineService: ObservableObject {
         let parts = line.split(separator: " ").map(String.init)
         if parts.count >= 2 {
             let move = parts[1]
+            if move == "0000" || move == "(none)" {
+                return // Ignore aborted search placeholder
+            }
             currentEvaluation.bestMove = move
             currentEvaluation.isCalculating = false
             currentEvaluation.statusMessage = "Analysis Complete: \(move)"

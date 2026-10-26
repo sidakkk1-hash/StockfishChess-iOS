@@ -74,12 +74,15 @@ public struct ChessBoardView: View {
                                             .padding(2)
                                     }
                                     
-                                    // Piece rendering
+                                    // Piece rendering with bold solid glyphs & high-contrast outlines
                                     if let piece = piecesMap[squareName] {
-                                        Text(unicodePiece(piece))
-                                            .font(.system(size: squareSize * 0.76))
-                                            .foregroundColor(piece.color == .white ? .white : .black)
-                                            .shadow(color: piece.color == .white ? .black.opacity(0.4) : .white.opacity(0.3), radius: 1, x: 0, y: 1)
+                                        Text(pieceGlyph(piece.type))
+                                            .font(.system(size: squareSize * 0.78, weight: .bold))
+                                            .foregroundColor(piece.color == .white ? Color(hex: "#ffffff") : Color(hex: "#1b1917"))
+                                            .shadow(color: piece.color == .white ? Color(hex: "#141414") : Color(hex: "#ffffff").opacity(0.25), radius: piece.color == .white ? 1.5 : 0.6, x: 0, y: 1)
+                                            .shadow(color: piece.color == .white ? Color(hex: "#141414") : Color.clear, radius: 0.5, x: 1, y: 0)
+                                            .shadow(color: piece.color == .white ? Color(hex: "#141414") : Color.clear, radius: 0.5, x: -1, y: 0)
+                                            .shadow(color: piece.color == .white ? Color(hex: "#141414") : Color.clear, radius: 0.5, x: 0, y: -1)
                                     }
                                     
                                     // Legal move indicator: dot for empty, ring for capture
@@ -201,20 +204,14 @@ public struct ChessBoardView: View {
         return map
     }
     
-    private func unicodePiece(_ piece: ChessPiece) -> String {
-        switch (piece.color, piece.type) {
-        case (.white, .king): return "♔"
-        case (.white, .queen): return "♕"
-        case (.white, .rook): return "♖"
-        case (.white, .bishop): return "♗"
-        case (.white, .knight): return "♘"
-        case (.white, .pawn): return "♙"
-        case (.black, .king): return "♚"
-        case (.black, .queen): return "♛"
-        case (.black, .rook): return "♜"
-        case (.black, .bishop): return "♝"
-        case (.black, .knight): return "♞"
-        case (.black, .pawn): return "♟"
+    private func pieceGlyph(_ type: PieceType) -> String {
+        switch type {
+        case .king: return "♚"
+        case .queen: return "♛"
+        case .rook: return "♜"
+        case .bishop: return "♝"
+        case .knight: return "♞"
+        case .pawn: return "♟"
         }
     }
 }

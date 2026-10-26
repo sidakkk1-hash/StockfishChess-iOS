@@ -5,7 +5,7 @@ public struct ContentView: View {
     @StateObject private var reviewService = GameReviewService.shared
     
     // Core Chess Rules Engine State
-    private let chessEngine = ChessRulesEngine()
+    @StateObject private var chessEngine = ChessRulesEngine()
     @State private var currentFen: String = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     @State private var isFlipped: Bool = false
     @State private var playerColor: PieceColor = .white
@@ -488,13 +488,7 @@ public struct ContentView: View {
     }
     
     private func runAnalysisForCurrentPosition() {
-        Task {
-            do {
-                _ = try await engine.evaluate(fen: currentFen, depth: Int(targetDepth))
-            } catch {
-                print("Analysis error: \(error)")
-            }
-        }
+        engine.startAnalysis(fen: currentFen, depth: Int(targetDepth))
     }
     
     private func resetGame() {
