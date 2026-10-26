@@ -34,6 +34,12 @@ public struct ContentView: View {
     @State private var capturedWhite: [ChessPiece] = []
     @State private var capturedBlack: [ChessPiece] = []
     
+    // Realistic Human Move Generator State
+    @State private var lastHumanTier: String? = nil
+    @State private var humanToastMessage: String? = nil
+    @State private var humanToastTier: String? = nil
+    @State private var humanToastTimer: DispatchWorkItem? = nil
+    
     public init() {}
     
     public var body: some View {
@@ -290,36 +296,90 @@ public struct ContentView: View {
         .padding(.vertical, 2)
     }
     
-    // MARK: - Navigation Bar
+    // MARK: - Navigation Bar & Human Move Action
     
     private var navigationBar: some View {
-        HStack(spacing: 16) {
-            Button(action: { selectPly(0) }) {
-                Image(systemName: "backward.end.fill")
+        VStack(spacing: 6) {
+            HStack(spacing: 12) {
+                Button(action: { selectPly(0) }) {
+                    Image(systemName: "backward.end.fill")
+                }
+                .disabled(moves.isEmpty || currentPly == 0)
+                
+                Button(action: { if currentPly > 0 { selectPly(currentPly - 1) } }) {
+                    Image(systemName: "chevron.left")
+                }
+                .disabled(currentPly == 0)
+                
+                Text("Ply \(currentPly) / \(moves.count)")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .frame(width: 85)
+                
+                Button(action: { if currentPly < moves.count { selectPly(currentPly + 1) } }) {
+                    Image(systemName: "chevron.right")
+                }
+                .disabled(currentPly == moves.count)
+                
+                Button(action: { selectPly(moves.count) }) {
+                    Image(systemName: "forward.end.fill")
+                }
+                .disabled(currentPly == moves.count)
+                
+                Spacer()
+                
+                // Human Move Button
+                Button(action: playHumanMove) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "dice.fill")
+                            .font(.system(size: 11))
+                        Text("Human Move")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(Color(hex: "#2c2925"))
+                    .foregroundColor(Color(hex: "#e2e2e2"))
+                    .cornerRadius(6)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color(hex: "#45413a"), lineWidth: 1)
+                    )
+                }
+                .disabled(isGameOver)
             }
-            .disabled(moves.isEmpty || currentPly == 0)
+            .font(.system(size: 14, weight: .bold))
+            .foregroundColor(.primary)
+            .padding(.horizontal, 4)
             
-            Button(action: { if currentPly > 0 { selectPly(currentPly - 1) } }) {
-                Image(systemName: "chevron.left")
+            // Dynamic feedback toast banner
+            if let toast = humanToastMessage, let tier = humanToastTier {
+                HStack(spacing: 6) {
+                    Text(tierBadgeText(tier))
+                        .font(.system(size: 10, weight: .heavy))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(tierColor(tier).opacity(0.2))
+                        .foregroundColor(tierColor(tier))
+                        .cornerRadius(4)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(tierColor(tier), lineWidth: 1)
+                        )
+                    
+                    Text(toast)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color(hex: "#262421"))
+                .cornerRadius(6)
+                .transition(.opacity)
             }
-            .disabled(currentPly == 0)
-            
-            Text("Ply \(currentPly) / \(moves.count)")
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
-                .frame(width: 100)
-            
-            Button(action: { if currentPly < moves.count { selectPly(currentPly + 1) } }) {
-                Image(systemName: "chevron.right")
-            }
-            .disabled(currentPly == moves.count)
-            
-            Button(action: { selectPly(moves.count) }) {
-                Image(systemName: "forward.end.fill")
-            }
-            .disabled(currentPly == moves.count)
         }
-        .font(.system(size: 15, weight: .bold))
-        .foregroundColor(.primary)
     }
     
     // MARK: - Engine Details Card
@@ -505,9 +565,54 @@ public struct ContentView: View {
         capturedBlack.removeAll()
         selectedSquare = nil
         legalMoveDestinations.removeAll()
+        lastHumanTier = nil
+        humanToastMessage = nil
+        humanToastTier = nil
+        humanToastTimer?.cancel()
         
         if autoAnalyze {
             runAnalysisForCurrentPosition()
+        }
+    }
+    
+    // MARK: - Human Move Logic
+    
+    private func playHumanMove() {
+        guard !isGameOver else { return }
+        let bestUci = engine.currentEvaluation.bestMove
+        guard let choice = chessEngine.pickRandomHumanMove(preferredBestUci: bestUci, lastTier: lastHumanTier) else { return }
+        
+        lastHumanTier = choice.tier
+        humanToastTier = choice.tier
+        let side = (chessEngine.activeColor == .white) ? "White" : "Black"
+        humanToastMessage = "\(side): \(choice.reason)"
+        
+        humanToastTimer?.cancel()
+        let work = DispatchWorkItem {
+            withAnimation {
+                self.humanToastMessage = nil
+                self.humanToastTier = nil
+            }
+        }
+        humanToastTimer = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.5, execute: work)
+        
+        executeMove(choice.move)
+    }
+    
+    private func tierColor(_ tier: String) -> Color {
+        switch tier {
+        case "good": return Color(hex: "#78a942")
+        case "inaccuracy": return Color(hex: "#f7b731")
+        default: return Color(hex: "#ff5252")
+        }
+    }
+    
+    private func tierBadgeText(_ tier: String) -> String {
+        switch tier {
+        case "good": return "GOOD 👍"
+        case "inaccuracy": return "INACCURACY 🤔"
+        default: return "BLUNDER 💀"
         }
     }
     

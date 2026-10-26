@@ -106,6 +106,17 @@ const graphDots = document.getElementById('graphDots');
 const graphCursor = document.getElementById('graphCursor');
 const graphContainer = document.getElementById('graphContainer');
 
+// --- Realistic Human Move Generator Elements ---
+const btnHumanMove = document.getElementById('btnHumanMove');
+const btnDiceIcon = document.getElementById('btnDiceIcon');
+const lastTierTag = document.getElementById('lastTierTag');
+const humanMoveToast = document.getElementById('humanMoveToast');
+const humanMoveBadge = document.getElementById('humanMoveBadge');
+const humanMoveReason = document.getElementById('humanMoveReason');
+let latestEngineEval = null;
+let lastHumanTier = null;
+let toastTimeout = null;
+
 // --- Initialization ---
 let isInitialized = false;
 
@@ -273,7 +284,7 @@ function onSquareClick(square) {
     }
 }
 
-function makePlayerMove(from, to, promotion = 'q') {
+function makePlayerMove(from, to, promotion = 'q', humanClassification = null) {
     const fenBefore = game.fen();
     try {
         const moveResult = game.move({ from, to, promotion });
@@ -291,7 +302,8 @@ function makePlayerMove(from, to, promotion = 'q') {
             san: moveResult.san,
             uci: `${from}${to}${promotion || ''}`,
             fenBefore,
-            fenAfter
+            fenAfter,
+            classification: humanClassification
         });
 
         currentPly = moveHistory.length;
@@ -308,6 +320,177 @@ function makePlayerMove(from, to, promotion = 'q') {
     } catch (e) {
         console.error("Illegal move:", e);
     }
+}
+
+// --- Realistic Human Move Generator (Good / Inaccuracy / Blunder) ---
+
+function categorizeLegalMoves(legals) {
+    const turn = game.turn();
+    const isWhite = (turn === 'w');
+    const bestUci = (latestEngineEval && latestEngineEval.bestMove) ? latestEngineEval.bestMove : null;
+
+    const goodMoves = [];
+    const inaccuracyMoves = [];
+    const blunderMoves = [];
+
+    const pieceVal = { 'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9, 'k': 100 };
+
+    for (const m of legals) {
+        const uci = `${m.from}${m.to}${m.promotion || ''}`;
+        const isBest = (bestUci && (uci === bestUci || uci.startsWith(bestUci.substring(0, 4))));
+        const isCastle = m.flags.includes('k') || m.flags.includes('q') || m.san === 'O-O' || m.san === 'O-O-O';
+        const isCapture = !!m.captured;
+
+        // 1. King-weakening pawns (Classic amateur blunder: opens king diagonal)
+        const isWeakeningKing = (isWhite && (m.san === 'f3' || m.san === 'g4' || m.san === 'f4')) ||
+                                (!isWhite && (m.san === 'f6' || m.san === 'g5' || m.san === 'f5'));
+
+        // 2. Early Queen wandering (Amateur tries early Scholar's Mate / Wayward Queen)
+        const isEarlyQueen = (m.piece === 'q' && moveHistory.length < 8 && !isCapture && !isBest);
+
+        // 3. Greedy Queen or Rook pawn captures
+        const isGreedyMajorCapture = (m.piece === 'q' || m.piece === 'r') && (m.captured === 'p') && !isBest;
+
+        // 4. Moving King early without castling
+        const isEarlyKingShuffle = (m.piece === 'k' && !isCastle && moveHistory.length < 14);
+
+        // 5. Flank pawn pushes (Amateur plays passive h3/a3/h6/a6 for no reason)
+        const isFlankPawn = (m.piece === 'p' && (m.to.startsWith('a') || m.to.startsWith('h')));
+
+        // 6. Knight on the rim (Amateur plays Na3, Nh3, Na6, Nh6)
+        const isKnightOnRim = (m.piece === 'n' && (m.to.startsWith('a') || m.to.startsWith('h')));
+
+        // 7. Central pawns & natural piece development
+        const isCentralPawn = (m.piece === 'p' && ['e4', 'd4', 'c4', 'e5', 'd5', 'c5'].includes(m.san));
+        const isMinorDevelopment = ((m.piece === 'n' || m.piece === 'b') && ['c3', 'f3', 'c6', 'f6', 'c4', 'f4', 'b5', 'e2', 'd3', 'e7', 'd6'].includes(m.to));
+
+        if (isBest) {
+            goodMoves.push({ move: m, tier: 'good', reason: 'Stockfish top choice (Best Move 👍)' });
+        } else if (isWeakeningKing) {
+            blunderMoves.push({ move: m, tier: 'blunder', reason: `Weakens King diagonal with ${m.san} (Classic Blunder 💀)` });
+        } else if (isEarlyQueen) {
+            blunderMoves.push({ move: m, tier: 'blunder', reason: `Premature Queen wandering with ${m.san} (Mistake 💀)` });
+        } else if (isGreedyMajorCapture) {
+            blunderMoves.push({ move: m, tier: 'blunder', reason: `Risky greedy capture with ${m.san} (Blunder 💀)` });
+        } else if (isEarlyKingShuffle) {
+            blunderMoves.push({ move: m, tier: 'blunder', reason: `Walks King into open board with ${m.san} (Blunder 💀)` });
+        } else if (isCastle) {
+            goodMoves.push({ move: m, tier: 'good', reason: `Secures King safety with ${m.san} (Castling 👍)` });
+        } else if (isCapture && pieceVal[m.captured] >= (pieceVal[m.piece] || 1)) {
+            goodMoves.push({ move: m, tier: 'good', reason: `Favorable capture with ${m.san} (Material gain 👍)` });
+        } else if (isCentralPawn || isMinorDevelopment) {
+            goodMoves.push({ move: m, tier: 'good', reason: `Active piece development with ${m.san} (Natural move 👍)` });
+        } else if (isFlankPawn) {
+            inaccuracyMoves.push({ move: m, tier: 'inaccuracy', reason: `Passive flank pawn push ${m.san} (Inaccuracy 🤔)` });
+        } else if (isKnightOnRim) {
+            inaccuracyMoves.push({ move: m, tier: 'inaccuracy', reason: `Knight on the rim with ${m.san} (Suboptimal 🤔)` });
+        } else {
+            // General quiet move
+            inaccuracyMoves.push({ move: m, tier: 'inaccuracy', reason: `Quiet move ${m.san} (Average move)` });
+        }
+    }
+
+    return { goodMoves, inaccuracyMoves, blunderMoves };
+}
+
+function pickHumanMoveTier(hasGood, hasInaccuracy, hasBlunder) {
+    const roll = Math.random();
+    let preferredTier = 'good';
+
+    // Weighted roll with intelligent human alternation (1 good move, 1 bad move, randomly varied)
+    if (lastHumanTier === 'blunder' || lastHumanTier === 'inaccuracy') {
+        // After a bad/inaccurate move, high chance of playing a good move next
+        if (roll < 0.60) preferredTier = 'good';
+        else if (roll < 0.85) preferredTier = 'blunder';
+        else preferredTier = 'inaccuracy';
+    } else if (lastHumanTier === 'good') {
+        // After a good move, high chance of making an inaccuracy or blunder
+        if (roll < 0.50) preferredTier = 'blunder';
+        else if (roll < 0.80) preferredTier = 'inaccuracy';
+        else preferredTier = 'good';
+    } else {
+        // Initial / balanced random roll
+        if (roll < 0.40) preferredTier = 'good';
+        else if (roll < 0.70) preferredTier = 'blunder';
+        else preferredTier = 'inaccuracy';
+    }
+
+    // Fallbacks if requested category has no available moves in this position
+    if (preferredTier === 'blunder' && !hasBlunder) {
+        preferredTier = hasInaccuracy ? 'inaccuracy' : 'good';
+    }
+    if (preferredTier === 'inaccuracy' && !hasInaccuracy) {
+        preferredTier = hasBlunder ? 'blunder' : 'good';
+    }
+    if (preferredTier === 'good' && !hasGood) {
+        preferredTier = hasBlunder ? 'blunder' : (hasInaccuracy ? 'inaccuracy' : 'good');
+    }
+
+    return preferredTier;
+}
+
+function showHumanMoveFeedback(tier, san, reason) {
+    if (!humanMoveToast) return;
+
+    if (lastTierTag) {
+        lastTierTag.className = `btn-tier-tag ${tier}`;
+        lastTierTag.textContent = tier.toUpperCase();
+    }
+
+    if (humanMoveBadge) {
+        humanMoveBadge.className = `human-badge ${tier}`;
+        if (tier === 'good') humanMoveBadge.textContent = 'Good Move 👍';
+        else if (tier === 'inaccuracy') humanMoveBadge.textContent = 'Inaccuracy 🤔';
+        else humanMoveBadge.textContent = 'Blunder 💀';
+    }
+
+    if (humanMoveReason) {
+        const turnName = (game.turn() === 'w') ? 'White' : 'Black';
+        humanMoveReason.textContent = `${turnName} played ${san} — ${reason}`;
+    }
+
+    humanMoveToast.style.display = 'flex';
+
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+        if (humanMoveToast) humanMoveToast.style.display = 'none';
+    }, 4500);
+}
+
+function makeHumanMove() {
+    if (game.isGameOver()) return;
+    const legals = game.moves({ verbose: true });
+    if (legals.length === 0) return;
+
+    // Visual button dice animation
+    if (btnHumanMove) {
+        btnHumanMove.classList.add('spinning');
+        setTimeout(() => btnHumanMove.classList.remove('spinning'), 450);
+    }
+
+    const { goodMoves, inaccuracyMoves, blunderMoves } = categorizeLegalMoves(legals);
+
+    const chosenTier = pickHumanMoveTier(
+        goodMoves.length > 0,
+        inaccuracyMoves.length > 0,
+        blunderMoves.length > 0
+    );
+
+    let candidatePool = goodMoves;
+    if (chosenTier === 'blunder' && blunderMoves.length > 0) candidatePool = blunderMoves;
+    else if (chosenTier === 'inaccuracy' && inaccuracyMoves.length > 0) candidatePool = inaccuracyMoves;
+    else if (candidatePool.length === 0) {
+        candidatePool = legals.map(m => ({ move: m, tier: 'inaccuracy', reason: `Played ${m.san}` }));
+    }
+
+    const chosen = candidatePool[Math.floor(Math.random() * candidatePool.length)];
+    lastHumanTier = chosen.tier;
+
+    // Show feedback toast and update tier badge
+    showHumanMoveFeedback(chosen.tier, chosen.move.san, chosen.reason);
+
+    // Make the move on the board
+    makePlayerMove(chosen.move.from, chosen.move.to, chosen.move.promotion || 'q', chosen.tier);
 }
 
 function showPromotionDialog(color) {
@@ -457,6 +640,7 @@ async function runEngineAnalysis() {
 
 function updateEngineMetrics(evalData) {
     if (!evalData) return;
+    latestEngineEval = evalData;
     const best = evalData.bestMove || '—';
     metricBestMove.textContent = best;
 
@@ -780,6 +964,12 @@ function setupEventListeners() {
             moveHistory = [];
             analyzedMoves = [];
             currentPly = 0;
+            lastHumanTier = null;
+            if (lastTierTag) {
+                lastTierTag.className = 'btn-tier-tag';
+                lastTierTag.textContent = 'Random';
+            }
+            if (humanMoveToast) humanMoveToast.style.display = 'none';
             reviewStatsCard.style.display = 'none';
             renderBoard();
             updateStatus();
@@ -793,6 +983,10 @@ function setupEventListeners() {
     document.getElementById('btnPrev').addEventListener('click', () => jumpToPly(currentPly - 1));
     document.getElementById('btnNext').addEventListener('click', () => jumpToPly(currentPly + 1));
     document.getElementById('btnEnd').addEventListener('click', () => jumpToPly(moveHistory.length));
+
+    if (btnHumanMove) {
+        btnHumanMove.addEventListener('click', makeHumanMove);
+    }
 
     chkAutoAnalyze.addEventListener('change', (e) => {
         autoAnalyze = e.target.checked;

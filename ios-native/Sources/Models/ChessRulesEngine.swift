@@ -254,6 +254,130 @@ public final class ChessRulesEngine: ObservableObject {
         return moves
     }
     
+    // MARK: - Realistic Human Move Generator (Good / Inaccuracy / Blunder)
+    
+    public struct HumanMoveChoice {
+        public let move: ChessMove
+        public let tier: String
+        public let reason: String
+        
+        public init(move: ChessMove, tier: String, reason: String) {
+            self.move = move
+            self.tier = tier
+            self.reason = reason
+        }
+    }
+    
+    public func pickRandomHumanMove(preferredBestUci: String? = nil, lastTier: String? = nil) -> HumanMoveChoice? {
+        let legals = legalMoves()
+        guard !legals.isEmpty else { return nil }
+        
+        var goodMoves: [HumanMoveChoice] = []
+        var inaccuracyMoves: [HumanMoveChoice] = []
+        var blunderMoves: [HumanMoveChoice] = []
+        
+        let pieceValues: [PieceType: Int] = [.pawn: 1, .knight: 3, .bishop: 3, .rook: 5, .queen: 9, .king: 100]
+        
+        for m in legals {
+            let uci = m.uci
+            let isBest = (preferredBestUci != nil && (uci == preferredBestUci! || uci.hasPrefix(preferredBestUci!)))
+            let movingPiece = board[m.from]
+            let targetPiece = board[m.to]
+            let isCastle = (movingPiece?.type == .king && abs(m.to.file - m.from.file) == 2)
+            let isCapture = (targetPiece != nil || (movingPiece?.type == .pawn && m.to == enPassantSquare))
+            
+            // 1. Weakening King pawn moves
+            let isWeakeningKing = (activeColor == .white && (
+                (m.from == Square(file: 5, rank: 1) && (m.to == Square(file: 5, rank: 2) || m.to == Square(file: 5, rank: 3))) ||
+                (m.from == Square(file: 6, rank: 1) && m.to == Square(file: 6, rank: 3))
+            )) || (activeColor == .black && (
+                (m.from == Square(file: 5, rank: 6) && (m.to == Square(file: 5, rank: 5) || m.to == Square(file: 5, rank: 4))) ||
+                (m.from == Square(file: 6, rank: 6) && m.to == Square(file: 6, rank: 4))
+            ))
+            
+            // 2. Early Queen wandering
+            let isEarlyQueen = (movingPiece?.type == .queen && moveHistory.count < 8 && !isCapture && !isBest)
+            
+            // 3. Risky major piece pawn capture
+            let isGreedyMajorCapture = ((movingPiece?.type == .queen || movingPiece?.type == .rook) && targetPiece?.type == .pawn && !isBest)
+            
+            // 4. Moving King early
+            let isEarlyKingShuffle = (movingPiece?.type == .king && !isCastle && moveHistory.count < 14)
+            
+            // 5. Flank pawn pushes
+            let isFlankPawn = (movingPiece?.type == .pawn && (m.to.file == 0 || m.to.file == 7))
+            
+            // 6. Knight on the rim
+            let isKnightOnRim = (movingPiece?.type == .knight && (m.to.file == 0 || m.to.file == 7))
+            
+            // 7. Central pawns & natural piece development
+            let isCentralPawn = (movingPiece?.type == .pawn && (m.to.file >= 2 && m.to.file <= 4))
+            let isMinorDevelopment = ((movingPiece?.type == .knight || movingPiece?.type == .bishop) && (m.to.rank >= 2 && m.to.rank <= 5))
+            
+            if isBest {
+                goodMoves.append(HumanMoveChoice(move: m, tier: "good", reason: "Stockfish top choice (Best Move 👍)"))
+            } else if isWeakeningKing {
+                blunderMoves.append(HumanMoveChoice(move: m, tier: "blunder", reason: "Weakens King diagonal (\(m.uci)) (Classic Blunder 💀)"))
+            } else if isEarlyQueen {
+                blunderMoves.append(HumanMoveChoice(move: m, tier: "blunder", reason: "Premature Queen wandering (\(m.uci)) (Mistake 💀)"))
+            } else if isGreedyMajorCapture {
+                blunderMoves.append(HumanMoveChoice(move: m, tier: "blunder", reason: "Risky greedy capture (\(m.uci)) (Blunder 💀)"))
+            } else if isEarlyKingShuffle {
+                blunderMoves.append(HumanMoveChoice(move: m, tier: "blunder", reason: "Walks King into the open (\(m.uci)) (Blunder 💀)"))
+            } else if isCastle {
+                goodMoves.append(HumanMoveChoice(move: m, tier: "good", reason: "Secures King safety (Castling 👍)"))
+            } else if isCapture, let t = targetPiece, let mp = movingPiece, (pieceValues[t.type] ?? 1) >= (pieceValues[mp.type] ?? 1) {
+                goodMoves.append(HumanMoveChoice(move: m, tier: "good", reason: "Favorable capture (\(m.uci)) (Material gain 👍)"))
+            } else if isCentralPawn || isMinorDevelopment {
+                goodMoves.append(HumanMoveChoice(move: m, tier: "good", reason: "Active development (\(m.uci)) (Natural move 👍)"))
+            } else if isFlankPawn {
+                inaccuracyMoves.append(HumanMoveChoice(move: m, tier: "inaccuracy", reason: "Passive flank pawn push (\(m.uci)) (Inaccuracy 🤔)"))
+            } else if isKnightOnRim {
+                inaccuracyMoves.append(HumanMoveChoice(move: m, tier: "inaccuracy", reason: "Knight on the rim (\(m.uci)) (Suboptimal 🤔)"))
+            } else {
+                inaccuracyMoves.append(HumanMoveChoice(move: m, tier: "inaccuracy", reason: "Quiet move (\(m.uci)) (Average move)"))
+            }
+        }
+        
+        let roll = Double.random(in: 0..<1.0)
+        var preferredTier = "good"
+        
+        if lastTier == "blunder" || lastTier == "inaccuracy" {
+            if roll < 0.60 { preferredTier = "good" }
+            else if roll < 0.85 { preferredTier = "blunder" }
+            else { preferredTier = "inaccuracy" }
+        } else if lastTier == "good" {
+            if roll < 0.50 { preferredTier = "blunder" }
+            else if roll < 0.80 { preferredTier = "inaccuracy" }
+            else { preferredTier = "good" }
+        } else {
+            if roll < 0.40 { preferredTier = "good" }
+            else if roll < 0.70 { preferredTier = "blunder" }
+            else { preferredTier = "inaccuracy" }
+        }
+        
+        if preferredTier == "blunder" && blunderMoves.isEmpty {
+            preferredTier = !inaccuracyMoves.isEmpty ? "inaccuracy" : "good"
+        }
+        if preferredTier == "inaccuracy" && inaccuracyMoves.isEmpty {
+            preferredTier = !blunderMoves.isEmpty ? "blunder" : "good"
+        }
+        if preferredTier == "good" && goodMoves.isEmpty {
+            preferredTier = !blunderMoves.isEmpty ? "blunder" : (!inaccuracyMoves.isEmpty ? "inaccuracy" : "good")
+        }
+        
+        var candidatePool = goodMoves
+        if preferredTier == "blunder" && !blunderMoves.isEmpty {
+            candidatePool = blunderMoves
+        } else if preferredTier == "inaccuracy" && !inaccuracyMoves.isEmpty {
+            candidatePool = inaccuracyMoves
+        } else if candidatePool.isEmpty {
+            candidatePool = legals.map { HumanMoveChoice(move: $0, tier: "inaccuracy", reason: "Played \($0.uci)") }
+        }
+        
+        return candidatePool.randomElement()
+    }
+    
     public func makeMove(_ move: ChessMove) -> Bool {
         var effectiveMove = move
         // Support castling by tapping the rook directly:

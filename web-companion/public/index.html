@@ -137,6 +137,22 @@
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
                     </button>
                 </div>
+
+                <!-- Realistic Human Move Generator -->
+                <div class="human-move-container">
+                    <button id="btnHumanMove" class="btn-human-move" title="Make a realistic human move (mix of good moves, inaccuracies, or blunders)">
+                        <span class="btn-dice" id="btnDiceIcon">🎲</span>
+                        <div class="btn-human-text-group">
+                            <span class="btn-human-title">Make Human Move</span>
+                            <span class="btn-human-sub">Plays realistic moves (Good / Inaccuracy / Blunder)</span>
+                        </div>
+                        <span class="btn-tier-tag" id="lastTierTag">Random</span>
+                    </button>
+                    <div id="humanMoveToast" class="human-move-toast" style="display: none;">
+                        <span id="humanMoveBadge" class="human-badge good">Good Move 👍</span>
+                        <span id="humanMoveReason" class="human-reason">Solid piece development</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Right: Analysis, Graph & Move History -->
