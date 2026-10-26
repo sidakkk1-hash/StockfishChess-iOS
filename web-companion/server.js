@@ -101,6 +101,11 @@ function evaluatePosition(fen, depth = 12) {
         };
 
         if (isSearching) {
+            if (currentResolve && activeSearchId !== thisSearchId) {
+                const oldRes = currentResolve;
+                currentResolve = null;
+                oldRes({ ...currentEval });
+            }
             stopResolve = () => {
                 launchSearch();
             };

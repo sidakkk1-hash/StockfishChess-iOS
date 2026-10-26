@@ -8,7 +8,7 @@ let legalMoves = [];
 let moveHistory = []; // { ply, san, uci, fenBefore, fenAfter, moveNumber }
 let currentPly = 0;
 let autoAnalyze = true;
-let targetDepth = 12;
+let targetDepth = 10;
 let isAnalyzing = false;
 let analyzedMoves = [];
 let pendingPromotion = null;
@@ -209,11 +209,19 @@ function onSquareClick(square) {
         // Destination clicked
         if (legalMoves.includes(square)) {
             const piece = game.get(selectedSquare);
+            let actualTo = square;
+            if (piece && piece.type === 'k') {
+                if (selectedSquare === 'e1' && square === 'h1') actualTo = 'g1';
+                else if (selectedSquare === 'e1' && square === 'a1') actualTo = 'c1';
+                else if (selectedSquare === 'e8' && square === 'h8') actualTo = 'g8';
+                else if (selectedSquare === 'e8' && square === 'a8') actualTo = 'c8';
+            }
+
             const isPromotion = piece && piece.type === 'p' &&
-                ((piece.color === 'w' && square.endsWith('8')) || (piece.color === 'b' && square.endsWith('1')));
+                ((piece.color === 'w' && actualTo.endsWith('8')) || (piece.color === 'b' && actualTo.endsWith('1')));
 
             if (isPromotion) {
-                pendingPromotion = { from: selectedSquare, to: square };
+                pendingPromotion = { from: selectedSquare, to: actualTo };
                 showPromotionDialog(piece.color);
                 selectedSquare = null;
                 legalMoves = [];
@@ -221,7 +229,7 @@ function onSquareClick(square) {
                 return;
             }
 
-            makePlayerMove(selectedSquare, square);
+            makePlayerMove(selectedSquare, actualTo);
             selectedSquare = null;
             legalMoves = [];
             return;
@@ -233,6 +241,12 @@ function onSquareClick(square) {
             selectedSquare = square;
             const moves = game.moves({ square: square, verbose: true });
             legalMoves = moves.map(m => m.to);
+            if (targetPiece.type === 'k') {
+                if (legalMoves.includes('g1')) legalMoves.push('h1');
+                if (legalMoves.includes('c1')) legalMoves.push('a1');
+                if (legalMoves.includes('g8')) legalMoves.push('h8');
+                if (legalMoves.includes('c8')) legalMoves.push('a8');
+            }
             renderBoard();
             return;
         }
@@ -248,6 +262,12 @@ function onSquareClick(square) {
             selectedSquare = square;
             const moves = game.moves({ square: square, verbose: true });
             legalMoves = moves.map(m => m.to);
+            if (piece.type === 'k') {
+                if (legalMoves.includes('g1')) legalMoves.push('h1');
+                if (legalMoves.includes('c1')) legalMoves.push('a1');
+                if (legalMoves.includes('g8')) legalMoves.push('h8');
+                if (legalMoves.includes('c8')) legalMoves.push('a8');
+            }
             renderBoard();
         }
     }
@@ -407,19 +427,31 @@ function getCurrentLastMove() {
 }
 
 // --- Stockfish Engine Communication ---
+let currentAnalysisController = null;
 async function runEngineAnalysis() {
     if (!autoAnalyze) return;
     const currentFen = game.fen();
+    if (currentAnalysisController) {
+        currentAnalysisController.abort();
+    }
+    const controller = new AbortController();
+    currentAnalysisController = controller;
+    
     try {
         const response = await fetch('/api/evaluate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fen: currentFen, depth: targetDepth })
+            body: JSON.stringify({ fen: currentFen, depth: targetDepth }),
+            signal: controller.signal
         });
         const data = await response.json();
-        updateEngineMetrics(data);
+        if (currentFen === game.fen()) {
+            updateEngineMetrics(data);
+        }
     } catch (err) {
-        console.error("Engine evaluation error:", err);
+        if (err.name !== 'AbortError') {
+            console.error("Engine evaluation error:", err);
+        }
     }
 }
 
