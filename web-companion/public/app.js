@@ -107,7 +107,12 @@ const graphCursor = document.getElementById('graphCursor');
 const graphContainer = document.getElementById('graphContainer');
 
 // --- Initialization ---
+let isInitialized = false;
+
 function init() {
+    if (isInitialized) return;
+    isInitialized = true;
+    console.log('[App] Initializing chess app (once)...');
     renderBoard();
     updateStatus();
     runEngineAnalysis();
@@ -918,4 +923,8 @@ function setupEventListeners() {
 }
 
 // Start app
-document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+} else {
+    init();
+}
