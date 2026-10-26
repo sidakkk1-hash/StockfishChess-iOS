@@ -18,9 +18,7 @@ let currentEval = {
 
 let isSearching = false;
 let currentResolve = null;
-let stopResolve = null;
-let currentSearchId = 0;
-let activeSearchId = 0;
+let pendingRequest = null; // { fen, depth, resolve }
 
 function getEngine() {
     if (engine) return engine;
@@ -32,22 +30,30 @@ function getEngine() {
             const line = rawLine.trim();
             if (!line) continue;
             
-            if (line === 'readyok' && stopResolve) {
-                const cb = stopResolve;
-                stopResolve = null;
-                cb();
-            } else if (line.startsWith('info') && activeSearchId === currentSearchId) {
+            if (line.startsWith('info') && isSearching) {
                 parseInfoLine(line);
             } else if (line.startsWith('bestmove')) {
-                isSearching = false;
                 const parts = line.split(/\s+/);
-                if (parts.length >= 2) {
-                    currentEval.bestMove = parts[1];
-                }
-                if (currentResolve && activeSearchId === currentSearchId) {
+                const bm = parts.length >= 2 ? parts[1] : null;
+
+                if (pendingRequest) {
+                    if (currentResolve) {
+                        const oldRes = currentResolve;
+                        currentResolve = null;
+                        oldRes({ ...currentEval, bestMove: null });
+                    }
+                    const next = pendingRequest;
+                    pendingRequest = null;
+                    launchSearch(next.fen, next.depth, next.resolve);
+                } else if (currentResolve) {
+                    // Legitimate completion of the current search!
+                    isSearching = false;
+                    currentEval.bestMove = bm;
                     const res = currentResolve;
                     currentResolve = null;
                     res({ ...currentEval });
+                } else {
+                    isSearching = false;
                 }
             }
         }
@@ -78,6 +84,9 @@ function parseInfoLine(line) {
             i += 3;
         } else if (key === 'pv' && i + 1 < parts.length) {
             currentEval.pv = parts.slice(i + 1);
+            if (currentEval.pv.length > 0) {
+                currentEval.bestMove = currentEval.pv[0];
+            }
             break;
         } else {
             i++;
@@ -85,43 +94,37 @@ function parseInfoLine(line) {
     }
 }
 
-function evaluatePosition(fen, depth = 12) {
-    return new Promise((resolve) => {
-        const eng = getEngine();
-        currentSearchId++;
-        const thisSearchId = currentSearchId;
-        
-        const launchSearch = () => {
-            currentEval = { depth: 0, scoreCp: 0, mateIn: null, bestMove: null, pv: [] };
-            activeSearchId = thisSearchId;
-            currentResolve = resolve;
-            isSearching = true;
-            eng.processCommand(`position fen ${fen}`);
-            eng.processCommand(`go depth ${depth}`);
-        };
+function launchSearch(fen, depth, resolve) {
+    currentEval = { depth: 0, scoreCp: 0, mateIn: null, bestMove: null, pv: [] };
+    currentResolve = resolve;
+    isSearching = true;
+    const eng = getEngine();
+    eng.processCommand(`position fen ${fen}`);
+    eng.processCommand(`go depth ${depth}`);
+}
 
+function evaluatePosition(fen, depth = 10) {
+    return new Promise((resolve) => {
+        getEngine();
         if (isSearching) {
-            if (currentResolve && activeSearchId !== thisSearchId) {
-                const oldRes = currentResolve;
-                currentResolve = null;
-                oldRes({ ...currentEval });
+            if (pendingRequest) {
+                const prev = pendingRequest.resolve;
+                prev({ ...currentEval, bestMove: null });
             }
-            stopResolve = () => {
-                launchSearch();
-            };
-            eng.processCommand('stop');
-            eng.processCommand('isready');
+            pendingRequest = { fen, depth, resolve };
+            engine.processCommand('stop');
         } else {
-            launchSearch();
+            launchSearch(fen, depth, resolve);
         }
         
         // Safety timeout
         setTimeout(() => {
             if (currentResolve === resolve) {
+                isSearching = false;
                 currentResolve = null;
                 resolve({ ...currentEval });
             }
-        }, 12000);
+        }, 8000);
     });
 }
 
